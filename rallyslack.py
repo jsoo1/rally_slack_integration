@@ -6,22 +6,24 @@ from datetime import timedelta
 from pyral import Rally
 from slacker import Slacker
 
+print "Rally Slackbot INIT"
+
 slack = Slacker('your slack key')
-
-# Send a message to #integration-testing channel
-
-server="rally1.rallydev.com"
+server = "rally1.rallydev.com"
 
 #as we are using an API key, we can leave out the username and password
-user=""
-password=""
+user = ""
+password = ""
 
-workspace="Your Workspace"
-project="Your Project"
-apikey="Your API Key"
+workspace = "Your Workspace"
+project = "Your Project"
+apikey = "Your API Key"
 
 #which slack channel does this post to?
-channel = "#softwareteam"
+channel = "#your_channel"
+
+#user that has access to the slack channel and will be posting the messages
+botusername = "rallybot"
 
 #Assume this system runs (via cron) every 15 minutes.
 interval = 15 * 60
@@ -39,29 +41,38 @@ querystartdate = datetime.utcnow() + querydelta;
 query = 'LastUpdateDate > ' + querystartdate.isoformat()
 
 response = rally.get('Artifact', fetch=True, query=query, order='LastUpdateDate desc')
+
 for artifact in response:
-	include = False
+    include = False
 
-	#start building the message string that may or may not be sent up to slack
-	postmessage = '*' + artifact.FormattedID + '*'
-	postmessage = postmessage + ': ' + artifact.Name + '\n';
-	for revision in artifact.RevisionHistory.Revisions: 
-		revisionDate = datetime.strptime(revision.CreationDate, format)
-		age = revisionDate - datetime.utcnow()
-		seconds = abs(age.total_seconds())
-		#only even consider this story for inclusion if the timestamp on the revision is less than iterval seconds onld
-		if seconds < interval:
-			description = revision.Description
-			items = description.split(',')
+    #start building the message string that may or may not be sent up to slack
+    postmessage = '*' + artifact.FormattedID + '*'
+    postmessage = postmessage + ': ' + artifact.Name + '\n';
+    for revision in artifact.RevisionHistory.Revisions:
+        revisionDate = datetime.strptime(revision.CreationDate, format)
+        age = revisionDate - datetime.utcnow()
+        seconds = abs(age.total_seconds())
+        #only even consider this story for inclusion if the timestamp on the revision is less than interval seconds old
+        if seconds < interval:
+            description = revision.Description
+            items = description.split(',')
 
-			for item in items:
-				item = item.strip()
-				#the only kinds of updates we care about are changes to OWNER and SCHEDULE STATE
-				#other changes, such as moving ranks around, etc, don't matter so much
-				if item.startswith('SCHEDULE STATE ') or item.startswith("OWNER added "):
-					postmessage = postmessage  + "> " + item + ' \n';
-					include = True
+            for item in items:
+                item = item.strip()
+                #the only kinds of updates we care about are changes to OWNER and SCHEDULE STATE
+                #other changes, such as moving ranks around, etc, don't matter so much
+                #if item.startswith('SCHEDULE STATE ') or item.startswith("OWNER added "):
 
-	if include:
-		postmessage = postmessage + 'https://rally1.rallydev.com/#/search?keywords=' + artifact.FormattedID + '\n'
-		slack.chat.post_message(channel=channel, text=postmessage, username="rallyslackbot", as_user=False)
+                #Modified to push all updates for now
+                postmessage = postmessage  + "> " + item + ' \n';
+                print postmessage
+                include = True
+
+    if include:
+        print "Attempting to send to Slack"
+        postmessage = postmessage + 'https://' + server + '/#/search?keywords=' + artifact.FormattedID + '\n'
+        slack.chat.post_message(channel=channel, text=postmessage, username=botusername, as_user=True)
+
+print "Rally Slackbot END"
+
+
