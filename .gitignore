@@ -1,0 +1,4 @@
+.rallyhook*
+*.pem
+venv/
+*.pyc
