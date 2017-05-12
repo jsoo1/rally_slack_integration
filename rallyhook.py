@@ -13,23 +13,19 @@ conf_s = conf_f.read()
 conf = json.loads(str(conf_s), encoding='utf-8')
 conf_f.close()
 
-rally_c = {
-    k: v.encode('utf-8') for k, v in conf.get('rally').iteritems()
-}
-slack_c = {
-    k: v.encode('utf-8') for k, v in conf.get('slack').iteritems()
-}
+rally_c = { k: v.encode('utf-8') for k, v in conf.get('rally').iteritems() }
+slack_c = { k: v.encode('utf-8') for k, v in conf.get('slack').iteritems() }
 rallyhook_c = conf.get('rallyhook')
 
 # API Auth
 slack = Slacker(slack_c.get('key'))
 rally = Rally(
-    server=rally_c.get('server'),
-    user=rally_c.get('user'),
-    password=rally_c.get('password'),
-    apikey=rally_c.get('apikey'),
-    workspace=rally_c.get('workspace'),
-    project=rally_c.get('project')
+    server = rally_c.get('server'),
+    user = rally_c.get('user'),
+    password = rally_c.get('password'),
+    apikey = rally_c.get('apikey'),
+    workspace = rally_c.get('workspace'),
+    project = rally_c.get('project')
 )
 app = Flask(rallyhook_c.get('appname'))
 
@@ -42,9 +38,9 @@ def rallybot():
 
 if (__name__ == '__main__'):
     app.run(
-        host=rallyhook_c.get('host'),
-        port=rallyhook_c.get('port'),
-        ssl_context=(rallyhook_c.get('cert'), rallyhook_c.get('key')),
-        debug=False
+        host = rallyhook_c.get('host'),
+        port = rallyhook_c.get('port'),
+        ssl_context =( rallyhook_c.get('cert'), rallyhook_c.get('key')),
+        debug = False
     )
 

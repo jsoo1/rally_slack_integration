@@ -1,0 +1,3 @@
+* Rallyhook.py
+** A webhook listener for Rally -> Slack notifications
+** Usage: sh rallyhook.sh build; sh rallyhook.sh start
