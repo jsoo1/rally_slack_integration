@@ -8,6 +8,7 @@ command   description
 build     create virtualenv, pip install, create certs, create logfiles
 start     create gunicorn daemon
 restart   restart gunicorn process
+stop      kill gunicorn process
 EOD
 
 read -r -d '' usage_text<<'EOD'
@@ -38,6 +39,10 @@ case "$1" in
             "gunicorn>=19.7.1,<20.0.0"
         deactivate
 
+        # TODO figure out our instance' environment and get rid of these
+        mv "$DIR"/venv/lib64/python2.7/dist-packages/markupsafe/ "$DIR"/venv/lib64/python2.7/site-packages/
+        mv "$DIR"/venv/lib64/python2.7/dist-packages/MarkupSafe-1.0-py2.7.egg-info/ "$DIR"/venv/lib64/python2.7/site-packages/
+
         # TODO get a domain name so we can get real certs?
         if [[ ! -f "$DIR"/rallyhook.pem ]] || [[ ! -f "$DIR"/cert.pem ]]; then
             openssl req \
@@ -47,6 +52,12 @@ case "$1" in
                     -out cert.pem \
                     -days 365
             openssl rsa -in rallyhook.pem -out rallyhook.pem
+
+            if [[ ! "$?" -eq 0 ]]; then
+                printf "Certs failed\n"
+                exit 1
+            fi
+
             printf "Created certs\n"
         fi
 
@@ -92,6 +103,16 @@ case "$1" in
         pid=$(cat "$DIR"/.pid)
         kill -HUP "$pid"
         printf "Restarted rallyhook, pid: %s\n" "$pid";;
+
+    stop)
+        if [[ ! -f "$DIR"/.pid ]]; then
+            printf "No pidfile found. Maybe try a ps?\n"
+            exit 1
+        fi
+
+        pid=$(cat "$DIR"/.pid)
+        kill -9 "$pid"
+        printf "Killed rallyhook, pid: %s\n" "$pid";;
 
     *)
         printf "\n%s\n\n%s\n\n" "$usage_text" "$help_text"
