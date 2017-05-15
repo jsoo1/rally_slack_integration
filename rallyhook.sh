@@ -16,7 +16,11 @@ case "$1" in
             virtualenv "$DIR"/venv
         fi
         source "$DIR"/venv/bin/activate
-        pip install pyral flask slacker gunicorn
+        pip install \
+            "pyral<1.4" \
+            "flask<0.13.0" \
+            "slacker<0.9.5" \
+            "gunicorn<20.0.0"
         deactivate
 
         # TODO get a domain name so we can get real certs?
