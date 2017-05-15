@@ -11,7 +11,7 @@ case "$1" in
         fi
 
         # virtualenv
-        if [[ ! -d "$DIR"/venv ]]; then
+        if [[ ! -d "$DIR"/venv/bin ]]; then
             mkdir "$DIR"/venv
             virtualenv "$DIR"/venv
         fi
@@ -26,7 +26,7 @@ case "$1" in
                     -newkey rsa:4096 \
                     -keyout rallyhook.pem \
                     -out cert.pem \
-                    -days365
+                    -days 365
             openssl rsa -in rallyhook.pem -out rallyhook.pem
             printf "Created certs\n"
         fi
@@ -37,8 +37,7 @@ case "$1" in
             mkdir "$logfile"
             touch \
                 "$logfile"/error.log \
-                "$logfile"/access.log \
-                "$logfile"/rallyhook.log
+                "$logfile"/access.log
         fi
 
         printf "Ready... ??\n";;
@@ -46,11 +45,11 @@ case "$1" in
     start)
         "$DIR"/venv/bin/gunicorn \
               --daemon \
-              -bind 0.0.0.0:5050 \
-              --certfile "$DIR"/cert.pem --keyfile "$DIR"/rallyhook.pem \
+              --bind 0.0.0.0:5050 \
+              --certfile "$DIR"/cert.pem \
+              --keyfile "$DIR"/rallyhook.pem \
               --access-logfile "$DIR"/.log/access.log \
               --error-logfile "$DIR"/.log/error.log \
-              --log-file "$DIR"/.log/rallyhook.log \
               --pid "$DIR"/.pid \
               rallyhook:app;;
 
