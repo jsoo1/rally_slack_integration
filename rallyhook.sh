@@ -2,6 +2,18 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+read -r -d '' help_text<<'EOD'
+command   description
+
+build     create virtualenv, pip install, create certs, create logfiles
+start     create gunicorn daemon
+restart   restart gunicorn process
+EOD
+
+read -r -d '' usage_text<<'EOD'
+Usage: rallyhook.sh <command>
+EOD
+
 case "$1" in
     build)
         # conf file check
@@ -15,12 +27,15 @@ case "$1" in
             mkdir "$DIR"/venv
             virtualenv "$DIR"/venv
         fi
+
+        # pip install
         source "$DIR"/venv/bin/activate
+        pip install --upgrade pip
         pip install \
-            "pyral<1.4" \
-            "flask<0.13.0" \
-            "slacker<0.9.5" \
-            "gunicorn<20.0.0"
+            "pyral>=1.3.1,<1.4" \
+            "Flask>=0.12.1,<0.13.0" \
+            "slacker>=0.9.2,<0.9.5" \
+            "gunicorn>=19.7.1,<20.0.0"
         deactivate
 
         # TODO get a domain name so we can get real certs?
@@ -47,6 +62,17 @@ case "$1" in
         printf "Ready... ??\n";;
 
     start)
+        # build check
+        if [[ ! -f "$DIR"/.rallyhook.json ]] || \
+               [[ ! -f "$DIR"/.log/error.log ]] || \
+               [[ ! -f "$DIR"/rallyhook.pem ]] || \
+               [[ ! -f "$DIR"/cert.pem ]] || \
+               [[ ! -d "$DIR"/venv/bin ]]; then
+            printf "Build needed\n"
+            exit 1
+        fi
+
+        # daemonize
         "$DIR"/venv/bin/gunicorn \
               --daemon \
               --bind 0.0.0.0:5050 \
@@ -58,8 +84,16 @@ case "$1" in
               rallyhook:app;;
 
     restart)
+        if [[ ! -f "$DIR"/.pid ]]; then
+            printf "No pidfile found. Maybe try a ps?\n"
+            exit 1
+        fi
+
         pid=$(cat "$DIR"/.pid)
         kill -HUP "$pid"
-        printf "Restarted rallyhook, pid: %s\n" "$pid"
+        printf "Restarted rallyhook, pid: %s\n" "$pid";;
+
+    *)
+        printf "\n%s\n\n%s\n\n" "$usage_text" "$help_text"
 
 esac
